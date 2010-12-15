@@ -50,12 +50,13 @@ class MucRss
           # for debugging
           Thread.current.abort_on_exception = true
           a = Mechanize.new
-          p = a.get(u)
           begin
+            p = a.get(u)
             title = p.title
             desc = p.search('/html/head/meta[@name="description"]/@content').first
             desc = desc.content if desc
           rescue NoMethodError
+          rescue Mechanize::ResponseCodeError
           end
           title ||= u
           desc ||= title
