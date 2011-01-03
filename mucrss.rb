@@ -55,8 +55,7 @@ class MucRss
             title = p.title
             desc = p.search('/html/head/meta[@name="description"]/@content').first
             desc = desc.content if desc
-          rescue NoMethodError
-          rescue Mechanize::ResponseCodeError
+          rescue
           end
           title ||= u
           desc ||= title
