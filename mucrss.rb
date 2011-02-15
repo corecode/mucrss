@@ -36,9 +36,26 @@ class MucRss
     raise RuntimeError, "Invalid rss at #@rsspath" if not @rss
     @rssmtx = Mutex.new
 
+    begin
+      @iconv_conversions = %w{utf-8 latin9}.map{|e| Iconv.new('utf-8', e)}
+    rescue
+      @iconv_conversions = []
+    end
+
     @bot = Jabber::MUCBot.new(config)
     @bot.add_command(UriRegxp, &self.method(:handle_uri))
-    @bot.add_command(/^#{@config[:nick]}\W+ur[il]/i, &self.method(:handle_question))
+    @bot.add_command(/^#{@config[:nick]}.*\bur[il]\b/i, &self.method(:handle_question))
+  end
+
+  def fix_encoding(str)
+    @iconv_conversions.each do |c|
+      begin
+        c.iconv(nil)
+        return c.iconv(str)
+      rescue
+      end
+    end
+    str
   end
 
   def handle_uri(sender, message)
@@ -63,9 +80,9 @@ class MucRss
           @rssmtx.synchronize do
             it = @rss.channel.class::Item.new
             it.author = sender
-            it.title = title
+            it.title = fix_encoding(title)
             it.link = u
-            it.description = desc
+            it.description = fix_encoding(desc)
             it.date = Time.now
 
             @rss.items << it
